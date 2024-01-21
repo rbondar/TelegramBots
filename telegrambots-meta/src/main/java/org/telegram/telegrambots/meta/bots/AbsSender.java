@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendVideoNote;
 import org.telegram.telegrambots.meta.api.methods.send.SendVoice;
 import org.telegram.telegrambots.meta.api.methods.stickers.AddStickerToSet;
 import org.telegram.telegrambots.meta.api.methods.stickers.CreateNewStickerSet;
-import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumb;
+import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumbail;
 import org.telegram.telegrambots.meta.api.methods.stickers.UploadStickerFile;
 import org.telegram.telegrambots.meta.api.methods.updates.GetWebhookInfo;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
@@ -153,12 +153,12 @@ public abstract class AbsSender {
     public abstract Boolean execute(AddStickerToSet addStickerToSet) throws TelegramApiException;
 
     /**
-     * Set sticker set thumb (https://core.telegram.org/bots/api#setStickerSetThumb)
-     * @param setStickerSetThumb Information of the sticker to set
+     * Set sticker set thumb (https://core.telegram.org/bots/api#setStickerSetThumbail)
+     * @param setStickerSetThumbail Information of the sticker to set
      * @return If success, true is returned
      * @throws TelegramApiException If there is any error setting the thumb to the set
      */
-    public abstract Boolean execute(SetStickerSetThumb setStickerSetThumb) throws TelegramApiException;
+    public abstract Boolean execute(SetStickerSetThumbail setStickerSetThumbail) throws TelegramApiException;
 
     /**
      * Creates a new sticker set (https://core.telegram.org/bots/api#createNewStickerSet)
@@ -241,11 +241,11 @@ public abstract class AbsSender {
     public abstract CompletableFuture<Boolean> executeAsync(AddStickerToSet addStickerToSet);
 
     /**
-     * Set sticker set thumb (https://core.telegram.org/bots/api#setStickerSetThumb)
-     * @param setStickerSetThumb Information of the sticker to set
+     * Set sticker set thumb (https://core.telegram.org/bots/api#setStickerSetThumbail)
+     * @param setStickerSetThumbail Information of the sticker to set
      * @return If success, true is returned
      */
-    public abstract CompletableFuture<Boolean> executeAsync(SetStickerSetThumb setStickerSetThumb);
+    public abstract CompletableFuture<Boolean> executeAsync(SetStickerSetThumbail setStickerSetThumbail);
 
     /**
      * Creates a new sticker set (https://core.telegram.org/bots/api#createNewStickerSet)

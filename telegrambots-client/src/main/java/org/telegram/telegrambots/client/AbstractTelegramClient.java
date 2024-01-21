@@ -2,15 +2,24 @@ package org.telegram.telegrambots.client;
 
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
-import org.telegram.telegrambots.meta.api.methods.send.*;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
+import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendSticker;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideoNote;
+import org.telegram.telegrambots.meta.api.methods.send.SendVoice;
 import org.telegram.telegrambots.meta.api.methods.stickers.AddStickerToSet;
 import org.telegram.telegrambots.meta.api.methods.stickers.CreateNewStickerSet;
-import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumb;
+import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumbail;
 import org.telegram.telegrambots.meta.api.methods.stickers.UploadStickerFile;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.objects.File;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.Serializable;
 import java.util.List;
@@ -120,11 +129,11 @@ public abstract class AbstractTelegramClient implements TelegramClient {
     }
 
     @Override
-    public Boolean execute(SetStickerSetThumb setStickerSetThumb) throws TelegramApiException {
+    public Boolean execute(SetStickerSetThumbail setStickerSetThumbail) throws TelegramApiException {
         try {
-            return executeAsync(setStickerSetThumb).get();
+            return executeAsync(setStickerSetThumbail).get();
         } catch (Exception e) {
-            throw mapException(e, setStickerSetThumb.getMethod());
+            throw mapException(e, setStickerSetThumbail.getMethod());
         }
     }
 

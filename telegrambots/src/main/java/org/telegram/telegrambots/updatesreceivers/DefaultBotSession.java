@@ -191,8 +191,7 @@ public class DefaultBotSession implements BotSession {
                             } else {
                                 updates.removeIf(x -> x.getUpdateId() < lastReceivedUpdate);
                                 lastReceivedUpdate = updates.parallelStream()
-                                        .map(
-                                                Update::getUpdateId)
+                                        .map(Update::getUpdateId)
                                         .max(Integer::compareTo)
                                         .orElse(0);
                                 receivedUpdates.addAll(updates);

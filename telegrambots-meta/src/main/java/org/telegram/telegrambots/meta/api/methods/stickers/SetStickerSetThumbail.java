@@ -28,12 +28,12 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiValidationException;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SetStickerSetThumb extends BotApiMethodBoolean {
+public class SetStickerSetThumbail extends BotApiMethodBoolean {
     public static final String PATH = "setStickerSetThumb";
 
     public static final String NAME_FIELD = "name";
-    public static final String USERID_FIELD = "user_id";
-    public static final String THUMB_FIELD = "thumb";
+    public static final String USER_ID_FIELD = "user_id";
+    public static final String THUMBNAIL_FIELD = "thumbnail";
 
     /**
      * Sticker set name
@@ -59,7 +59,7 @@ public class SetStickerSetThumb extends BotApiMethodBoolean {
      *
      * If omitted, then the thumbnail is dropped and the first sticker is used as the thumbnail.
      */
-    private InputFile thumb;
+    private InputFile thumbnail;
 
     @Override
     public String getMethod() {
@@ -74,8 +74,8 @@ public class SetStickerSetThumb extends BotApiMethodBoolean {
         if (userId <= 0) {
             throw new TelegramApiValidationException("userId can't be null", this);
         }
-        if (thumb != null) {
-            thumb.validate();
+        if (thumbnail != null) {
+            thumbnail.validate();
         }
     }
 }

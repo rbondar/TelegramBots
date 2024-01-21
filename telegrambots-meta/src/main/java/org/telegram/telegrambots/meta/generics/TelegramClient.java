@@ -1,11 +1,19 @@
-package org.telegram.telegrambots.client;
+package org.telegram.telegrambots.meta.generics;
 
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
-import org.telegram.telegrambots.meta.api.methods.send.*;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
+import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendSticker;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideoNote;
+import org.telegram.telegrambots.meta.api.methods.send.SendVoice;
 import org.telegram.telegrambots.meta.api.methods.stickers.AddStickerToSet;
 import org.telegram.telegrambots.meta.api.methods.stickers.CreateNewStickerSet;
-import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumb;
+import org.telegram.telegrambots.meta.api.methods.stickers.SetStickerSetThumbail;
 import org.telegram.telegrambots.meta.api.methods.stickers.UploadStickerFile;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.objects.File;
@@ -80,19 +88,19 @@ public interface TelegramClient {
 
     /**
      * Set sticker set thumb
-     * @param setStickerSetThumb Information of the sticker to set
+     * @param setStickerSetThumbail Information of the sticker to set
      * @return If success, true is returned
      * @throws TelegramApiException If there is any error setting the thumb to the set
-     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumb">https://core.telegram.org/bots/api#setStickerSetThumb</a>
+     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumbail">https://core.telegram.org/bots/api#setStickerSetThumbail</a>
      */
-    Boolean execute(SetStickerSetThumb setStickerSetThumb) throws TelegramApiException;
+    Boolean execute(SetStickerSetThumbail setStickerSetThumbail) throws TelegramApiException;
 
     /**
      * Creates a new sticker set ≈
      * @param createNewStickerSet Information of the sticker set to create
      * @return If success, true is returned
      * @throws TelegramApiException If there is any error creating the new sticker set
-     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumb">https://core.telegram.org/bots/api#setStickerSetThumb</a>
+     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumbail">https://core.telegram.org/bots/api#setStickerSetThumbail</a>
      */
     Boolean execute(CreateNewStickerSet createNewStickerSet) throws TelegramApiException;
 
@@ -171,11 +179,11 @@ public interface TelegramClient {
 
     /**
      * Set sticker set thumb
-     * @param setStickerSetThumb Information of the sticker to set
+     * @param setStickerSetThumbail Information of the sticker to set
      * @return If success, true is returned
-     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumb">https://core.telegram.org/bots/api#setStickerSetThumb</a>
+     * @see <a href="https://core.telegram.org/bots/api#setStickerSetThumbail">https://core.telegram.org/bots/api#setStickerSetThumbail</a>
      */
-    CompletableFuture<Boolean> executeAsync(SetStickerSetThumb setStickerSetThumb);
+    CompletableFuture<Boolean> executeAsync(SetStickerSetThumbail setStickerSetThumbail);
 
     /**
      * Creates a new sticker set

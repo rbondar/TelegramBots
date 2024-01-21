@@ -22,4 +22,10 @@ public interface MaybeInaccessibleMessage extends BotApiObject {
     }
 
     Long getChatId();
+
+    Chat getChat();
+
+    Integer getMessageId();
+
+    Integer getDate();
 }
