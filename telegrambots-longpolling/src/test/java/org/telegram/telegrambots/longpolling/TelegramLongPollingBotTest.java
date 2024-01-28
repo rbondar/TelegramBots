@@ -4,14 +4,13 @@ import lombok.Setter;
 import org.telegram.telegrambots.common.TelegramUrl;
 import org.telegram.telegrambots.common.longpolling.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Setter
 public class TelegramLongPollingBotTest implements TelegramLongPollingBot {
     private TelegramUrl baseUrl;
 
     @Override
-    public void deleteWebhook() throws TelegramApiException {
+    public void deleteWebhook() {
 
     }
 

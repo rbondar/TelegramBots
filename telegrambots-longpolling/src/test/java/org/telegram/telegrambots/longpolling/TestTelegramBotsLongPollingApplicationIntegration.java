@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestTelegramBotsLongPollingApplicationIntegration {
     private MockWebServer webServer;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private TelegramLongPollingBotTest telegramLongPollingBotTest;
 

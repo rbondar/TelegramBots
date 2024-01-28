@@ -64,7 +64,7 @@ public class BotSession implements AutoCloseable {
         }
     }
 
-    public void stop() throws TelegramApiException {
+    public void stop() {
         if (runningPolling != null) {
             runningPolling.cancel(false);
             runningPolling = null;

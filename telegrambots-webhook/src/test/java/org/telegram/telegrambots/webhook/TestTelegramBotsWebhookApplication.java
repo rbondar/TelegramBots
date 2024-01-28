@@ -61,7 +61,7 @@ public class TestTelegramBotsWebhookApplication {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         application.close();
     }
 
