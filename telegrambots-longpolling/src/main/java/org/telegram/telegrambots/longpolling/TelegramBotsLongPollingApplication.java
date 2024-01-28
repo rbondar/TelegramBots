@@ -2,23 +2,38 @@ package org.telegram.telegrambots.longpolling;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.telegram.telegrambots.common.longpolling.TelegramBotsLongPolling;
 import org.telegram.telegrambots.common.longpolling.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
 public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolling {
     private final ObjectMapper objectMapper;
+    private final OkHttpClient okHttpClient;
+    private final ScheduledExecutorService executor;
+
     private final ConcurrentHashMap<String, BotSession> botSessions = new ConcurrentHashMap<>();
 
     public TelegramBotsLongPollingApplication() {
-        this(new ObjectMapper());
+        this(null);
     }
 
     public TelegramBotsLongPollingApplication(ObjectMapper objectMapper) {
+        this(objectMapper, null);
+    }
+
+    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper, OkHttpClient okHttpClient) {
+        this(objectMapper, okHttpClient, null);
+    }
+
+    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper, OkHttpClient okHttpClient, ScheduledExecutorService executor) {
         this.objectMapper = objectMapper;
+        this.okHttpClient = okHttpClient;
+        this.executor = executor;
     }
 
     @Override
@@ -26,7 +41,7 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
         if (botSessions.containsKey(telegramLongPollingBot.getBotToken())) {
             throw new TelegramApiException("Bot is already registered");
         } else {
-            BotSession botSession = new BotSession(telegramLongPollingBot, objectMapper);
+            BotSession botSession = new BotSession(telegramLongPollingBot, objectMapper, okHttpClient, executor);
             botSessions.put(telegramLongPollingBot.getBotToken(), botSession);
             botSession.start();
         }

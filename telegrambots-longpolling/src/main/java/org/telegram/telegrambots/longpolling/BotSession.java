@@ -3,7 +3,6 @@ package org.telegram.telegrambots.longpolling;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Authenticator;
 import okhttp3.ConnectionPool;
@@ -43,7 +42,6 @@ import static java.util.Optional.ofNullable;
 
 @Data
 @Slf4j
-@RequiredArgsConstructor
 public class BotSession implements AutoCloseable {
     private final BackOff backOff = new ExponentialBackOff();
 
@@ -57,46 +55,14 @@ public class BotSession implements AutoCloseable {
 
     private volatile ScheduledFuture<?> runningPolling = null;
 
-    public BotSession(TelegramLongPollingBot telegramLongPollingBot) {
-        this(telegramLongPollingBot, new ObjectMapper(), Executors.newSingleThreadScheduledExecutor());
-    }
-
-    public BotSession(TelegramLongPollingBot telegramLongPollingBot,
-                      ObjectMapper objectMapper) {
-        this(telegramLongPollingBot, objectMapper, Executors.newSingleThreadScheduledExecutor());
-    }
-
     public BotSession(TelegramLongPollingBot telegramLongPollingBot,
                       ObjectMapper objectMapper,
+                      OkHttpClient httpClient,
                       ScheduledExecutorService executor) {
         this.telegramLongPollingBot = telegramLongPollingBot;
-        this.objectMapper = objectMapper;
-        this.executor = executor;
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(100); // Max requests
-        dispatcher.setMaxRequestsPerHost(100); // Max per host
-
-        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient()
-                .newBuilder()
-                .dispatcher(dispatcher)
-                .connectionPool(new ConnectionPool(
-                        100, // Max conn #
-                        75, // Keepaliave
-                        TimeUnit.SECONDS
-                ))
-                .readTimeout(100, TimeUnit.SECONDS) // Time to read from server
-                .writeTimeout(70, TimeUnit.SECONDS) // Time to write to server
-                .connectTimeout(75, TimeUnit.SECONDS); // Max Connect timeout
-                // .callTimeout(200, TimeUnit.SECONDS) // Overall timeout, needed?;
-
-        ofNullable(telegramLongPollingBot.getProxy()).ifPresent(proxy -> { // Proxy
-            okHttpClientBuilder.proxy(proxy);
-            if (StringUtils.isNotBlank(telegramLongPollingBot.getProxyUser()) && StringUtils.isNotBlank(telegramLongPollingBot.getProxyPassword())) {
-                okHttpClientBuilder.proxyAuthenticator(getProxyAuthenticator(telegramLongPollingBot.getProxyUser(), telegramLongPollingBot.getProxyPassword()));
-            }
-        });
-
-        okHttpClient = okHttpClientBuilder.build();
+        this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+        this.executor = executor == null ? Executors.newSingleThreadScheduledExecutor() : executor;
+        okHttpClient = httpClient == null ? createHttpClient(telegramLongPollingBot) : httpClient;
     }
 
     public void start() throws TelegramApiException {
@@ -182,7 +148,37 @@ public class BotSession implements AutoCloseable {
     }
 
     @NonNull
-    private Authenticator getProxyAuthenticator(String user, String password) {
+    private static OkHttpClient createHttpClient(TelegramLongPollingBot telegramLongPollingBot) {
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.setMaxRequests(100); // Max requests
+        dispatcher.setMaxRequestsPerHost(100); // Max per host
+
+        final OkHttpClient okHttpClient;
+        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient()
+                .newBuilder()
+                .dispatcher(dispatcher)
+                .connectionPool(new ConnectionPool(
+                        100, // Max conn #
+                        75, // Keepaliave
+                        TimeUnit.SECONDS
+                ))
+                .readTimeout(100, TimeUnit.SECONDS) // Time to read from server
+                .writeTimeout(70, TimeUnit.SECONDS) // Time to write to server
+                .connectTimeout(75, TimeUnit.SECONDS); // Max Connect timeout
+        // .callTimeout(200, TimeUnit.SECONDS) // Overall timeout, needed?;
+
+        ofNullable(telegramLongPollingBot.getProxy()).ifPresent(proxy -> { // Proxy
+            okHttpClientBuilder.proxy(proxy);
+            if (StringUtils.isNotBlank(telegramLongPollingBot.getProxyUser()) && StringUtils.isNotBlank(telegramLongPollingBot.getProxyPassword())) {
+                okHttpClientBuilder.proxyAuthenticator(getProxyAuthenticator(telegramLongPollingBot.getProxyUser(), telegramLongPollingBot.getProxyPassword()));
+            }
+        });
+
+        return okHttpClientBuilder.build();
+    }
+
+    @NonNull
+    private static Authenticator getProxyAuthenticator(String user, String password) {
         return new Authenticator() {
             @Override
             public @NonNull Request authenticate(@Nullable Route route, @NonNull Response response) throws IOException {
