@@ -155,7 +155,7 @@ public class TelegramBotsWebhookApplication implements TelegramBotsWebhook {
     private void setPostHandler(TelegramWebhookBot telegramWebhookBot) throws TelegramApiException {
         app.post(telegramWebhookBot.getBotPath(), ctx -> {
             Update update = ctx.bodyStreamAsClass(Update.class);
-            BotApiMethod<?> response = telegramWebhookBot.onWebhookUpdateReceived(update);
+            BotApiMethod<?> response = telegramWebhookBot.updatesConsumer().consume(update);
             if (response != null) {
                 response.validate();
                 ctx.json(response);

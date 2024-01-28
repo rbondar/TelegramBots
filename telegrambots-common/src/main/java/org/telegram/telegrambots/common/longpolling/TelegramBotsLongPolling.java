@@ -14,7 +14,7 @@ public interface TelegramBotsLongPolling extends AutoCloseable {
      *
      * @throws TelegramApiException if any issue registering the bot or the bot is already registered
      */
-    void registerBot(TelegramLongPollingBot telegramLongPollingBot) throws TelegramApiException;
+    void registerBot(TelegramLongPollingBot telegramLongPollingBot, LongPollingTelegramUpdatesConsumer telegramUpdatesConsumer) throws TelegramApiException;
 
     /**
      * Use this method to unregister a bot in the long polling app.

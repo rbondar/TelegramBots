@@ -25,7 +25,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class TelegramClientIntegrationTest {
+public class TestTelegramClientIntegration {
 
     @RegisterExtension
     static WireMockExtension wm = WireMockExtension.newInstance()

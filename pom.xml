@@ -85,6 +85,7 @@
         <commons-lang.version>3.14.0</commons-lang.version>
         <commons-io.version>2.11.0</commons-io.version>
         <okhttp.version>4.12.0</okhttp.version>
+        <awaitability.version>3.0.0</awaitability.version>
     </properties>
 
     <dependencyManagement>
@@ -163,6 +164,19 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${okhttp.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitability.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Included to enforce common version-->

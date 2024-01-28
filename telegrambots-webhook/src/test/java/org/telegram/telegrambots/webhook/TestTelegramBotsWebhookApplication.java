@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.common.webhook.TelegramWebhookBot;
+import org.telegram.telegrambots.common.webhook.WebhookTelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -228,9 +229,14 @@ public class TestTelegramBotsWebhookApplication {
         }
 
         @Override
-        public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-            updateReceived = update;
-            return null;
+        public WebhookTelegramUpdateConsumer updatesConsumer() {
+            return new WebhookTelegramUpdateConsumer() {
+                @Override
+                public BotApiMethod<?> consume(Update update) {
+                    updateReceived = update;
+                    return null;
+                }
+            };
         }
 
         @Override

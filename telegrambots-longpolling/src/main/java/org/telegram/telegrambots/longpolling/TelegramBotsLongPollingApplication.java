@@ -3,45 +3,50 @@ package org.telegram.telegrambots.longpolling;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
 import org.telegram.telegrambots.common.longpolling.TelegramBotsLongPolling;
 import org.telegram.telegrambots.common.longpolling.TelegramLongPollingBot;
+import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 @Slf4j
 public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolling {
     private final ObjectMapper objectMapper;
-    private final OkHttpClient okHttpClient;
+    private final Supplier<OkHttpClient> okHttpClientCreator;
     private final ScheduledExecutorService executor;
 
     private final ConcurrentHashMap<String, BotSession> botSessions = new ConcurrentHashMap<>();
-
     public TelegramBotsLongPollingApplication() {
-        this(null);
+        this(new ObjectMapper());
     }
 
     public TelegramBotsLongPollingApplication(ObjectMapper objectMapper) {
-        this(objectMapper, null);
+        this(objectMapper, new TelegramOkHttpClientFactory.DefaultOkHttpClientCreator());
     }
 
-    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper, OkHttpClient okHttpClient) {
-        this(objectMapper, okHttpClient, null);
+    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper, Supplier<OkHttpClient> okHttpClientCreator) {
+        this(objectMapper, okHttpClientCreator, Executors.newSingleThreadScheduledExecutor());
     }
 
-    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper, OkHttpClient okHttpClient, ScheduledExecutorService executor) {
+    public TelegramBotsLongPollingApplication(ObjectMapper objectMapper,
+                                              Supplier<OkHttpClient> okHttpClientCreator,
+                                              ScheduledExecutorService executor) {
         this.objectMapper = objectMapper;
-        this.okHttpClient = okHttpClient;
+        this.okHttpClientCreator = okHttpClientCreator;
         this.executor = executor;
     }
 
     @Override
-    public void registerBot(TelegramLongPollingBot telegramLongPollingBot) throws TelegramApiException {
+    public void registerBot(TelegramLongPollingBot telegramLongPollingBot, LongPollingTelegramUpdatesConsumer updatesConsumer) throws TelegramApiException {
         if (botSessions.containsKey(telegramLongPollingBot.getBotToken())) {
             throw new TelegramApiException("Bot is already registered");
         } else {
-            BotSession botSession = new BotSession(telegramLongPollingBot, objectMapper, okHttpClient, executor);
+            BotSession botSession = new BotSession(telegramLongPollingBot, updatesConsumer, objectMapper, okHttpClientCreator.get(), executor);
             botSessions.put(telegramLongPollingBot.getBotToken(), botSession);
             botSession.start();
         }
@@ -88,7 +93,6 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
 
     @Override
     public void close() throws Exception {
-        this.stop();
         for (BotSession botSession : botSessions.values()) {
             if (botSession != null) {
                 botSession.close();

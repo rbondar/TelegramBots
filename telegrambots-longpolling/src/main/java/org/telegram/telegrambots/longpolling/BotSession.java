@@ -4,10 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Authenticator;
-import okhttp3.ConnectionPool;
-import okhttp3.Credentials;
-import okhttp3.Dispatcher;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -15,9 +11,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okhttp3.Route;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
+import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
 import org.telegram.telegrambots.common.longpolling.TelegramLongPollingBot;
 import org.telegram.telegrambots.longpolling.exceptions.TelegramApiErrorResponseException;
 import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
@@ -27,23 +21,20 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.meta.generics.BackOff;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.Optional.ofNullable;
-
 @Data
 @Slf4j
 public class BotSession implements AutoCloseable {
     private final BackOff backOff = new ExponentialBackOff();
+    private final LongPollingTelegramUpdatesConsumer updatesConsumer;
 
     private AtomicBoolean running = new AtomicBoolean(false);
     private AtomicInteger lastReceivedUpdate = new AtomicInteger(0);
@@ -56,13 +47,15 @@ public class BotSession implements AutoCloseable {
     private volatile ScheduledFuture<?> runningPolling = null;
 
     public BotSession(TelegramLongPollingBot telegramLongPollingBot,
+                      LongPollingTelegramUpdatesConsumer updatesConsumer,
                       ObjectMapper objectMapper,
-                      OkHttpClient httpClient,
+                      OkHttpClient okHttpClient,
                       ScheduledExecutorService executor) {
         this.telegramLongPollingBot = telegramLongPollingBot;
-        this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
-        this.executor = executor == null ? Executors.newSingleThreadScheduledExecutor() : executor;
-        okHttpClient = httpClient == null ? createHttpClient(telegramLongPollingBot) : httpClient;
+        this.objectMapper = objectMapper;
+        this.executor = executor;
+        this.okHttpClient = okHttpClient;
+        this.updatesConsumer = updatesConsumer;
     }
 
     public void start() throws TelegramApiException {
@@ -93,16 +86,17 @@ public class BotSession implements AutoCloseable {
         return executor.scheduleAtFixedRate(() -> {
             try {
                 List<Update> updates = getUpdatesFromTelegram();
+                // Reset backup with every successful request
+                backOff.reset();
+                // Handle updates
                 if (!updates.isEmpty()) {
                     updates.removeIf(x -> x.getUpdateId() < lastReceivedUpdate.get());
                     lastReceivedUpdate.set(updates.parallelStream()
                             .mapToInt(Update::getUpdateId)
                             .max()
                             .orElse(0));
-                    telegramLongPollingBot.onUpdatesReceived(updates);
+                    updatesConsumer.consume(updates);
                 }
-            } catch (TelegramApiRequestException | IOException e) {
-                log.error(e.getLocalizedMessage(), e);
             } catch (TelegramApiErrorResponseException e) {
                 long backOffMillis = backOff.nextBackOffMillis();
                 log.error("Error received from Telegram GetUpdates Request, retrying in {} millis...", backOffMillis, e);
@@ -112,83 +106,47 @@ public class BotSession implements AutoCloseable {
                     // Ignore this
                     log.warn("GetUpdates got interrupted while sleeping in backoff mode.", ex);
                 }
+            } catch (TelegramApiException  e) {
+                log.error(e.getLocalizedMessage(), e);
             }
-        }, 1, 1, TimeUnit.MILLISECONDS);
+        }, 1, 1, TimeUnit.MICROSECONDS);
     }
 
-    private List<Update> getUpdatesFromTelegram() throws TelegramApiRequestException, IOException, TelegramApiErrorResponseException {
-        Request request = new Request.Builder()
-                .url(
-                        new HttpUrl
-                                .Builder()
-                                .host(telegramLongPollingBot.getBaseUrl() + telegramLongPollingBot.getBotToken())
-                                .addPathSegment(GetUpdates.PATH)
-                                .build()
-                )
-                .header("charset", StandardCharsets.UTF_8.name())
-                .post(RequestBody.create(objectMapper.writeValueAsString(telegramLongPollingBot.getUpdatesRequest()), MediaType.parse("application/json")))
-                .build();
+    private List<Update> getUpdatesFromTelegram() throws TelegramApiRequestException, TelegramApiErrorResponseException {
+        try {
+            Request request = new Request.Builder()
+                    .url(
+                            new HttpUrl
+                                    .Builder()
+                                    .scheme(telegramLongPollingBot.getBaseUrl().getSchema())
+                                    .host(telegramLongPollingBot.getBaseUrl().getHost())
+                                    .port(telegramLongPollingBot.getBaseUrl().getPort())
+                                    .addPathSegment("bot" + telegramLongPollingBot.getBotToken())
+                                    .addPathSegment(GetUpdates.PATH)
+                                    .build()
+                    )
+                    .header("charset", StandardCharsets.UTF_8.name())
+                    .post(RequestBody.create(objectMapper.writeValueAsString(telegramLongPollingBot.getUpdatesRequest(lastReceivedUpdate.get())), MediaType.parse("application/json")))
+                    .build();
 
-        try (Response response = okHttpClient.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                try (ResponseBody body = response.body()) {
-                    if (body != null) {
-                        List<Update> updates = telegramLongPollingBot.getUpdatesRequest().deserializeResponse(body.string());
-                        // Reset backup with every successful request
-                        backOff.reset();
-                        return updates;
+            try (Response response = okHttpClient.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    try (ResponseBody body = response.body()) {
+                        if (body != null) {
+                            List<Update> updates = telegramLongPollingBot.getUpdatesRequest(lastReceivedUpdate.get()).deserializeResponse(body.string());
+                            // Reset backup with every successful request
+                            backOff.reset();
+                            return updates;
+                        }
                     }
+                } else {
+                    throw new TelegramApiErrorResponseException(response.code(), response.message());
                 }
-            } else {
-                throw new TelegramApiErrorResponseException(response.code(), response.message());
             }
+        } catch (Exception e) {
+            throw new TelegramApiErrorResponseException(e);
         }
 
         return Collections.emptyList();
-    }
-
-    @NonNull
-    private static OkHttpClient createHttpClient(TelegramLongPollingBot telegramLongPollingBot) {
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(100); // Max requests
-        dispatcher.setMaxRequestsPerHost(100); // Max per host
-
-        final OkHttpClient okHttpClient;
-        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient()
-                .newBuilder()
-                .dispatcher(dispatcher)
-                .connectionPool(new ConnectionPool(
-                        100, // Max conn #
-                        75, // Keepaliave
-                        TimeUnit.SECONDS
-                ))
-                .readTimeout(100, TimeUnit.SECONDS) // Time to read from server
-                .writeTimeout(70, TimeUnit.SECONDS) // Time to write to server
-                .connectTimeout(75, TimeUnit.SECONDS); // Max Connect timeout
-        // .callTimeout(200, TimeUnit.SECONDS) // Overall timeout, needed?;
-
-        ofNullable(telegramLongPollingBot.getProxy()).ifPresent(proxy -> { // Proxy
-            okHttpClientBuilder.proxy(proxy);
-            if (StringUtils.isNotBlank(telegramLongPollingBot.getProxyUser()) && StringUtils.isNotBlank(telegramLongPollingBot.getProxyPassword())) {
-                okHttpClientBuilder.proxyAuthenticator(getProxyAuthenticator(telegramLongPollingBot.getProxyUser(), telegramLongPollingBot.getProxyPassword()));
-            }
-        });
-
-        return okHttpClientBuilder.build();
-    }
-
-    @NonNull
-    private static Authenticator getProxyAuthenticator(String user, String password) {
-        return new Authenticator() {
-            @Override
-            public @NonNull Request authenticate(@Nullable Route route, @NonNull Response response) throws IOException {
-                String credential = Credentials.basic(user, password);
-                return response
-                        .request()
-                        .newBuilder()
-                        .header("Proxy-Authorization", credential)
-                        .build();
-            }
-        };
     }
 }
