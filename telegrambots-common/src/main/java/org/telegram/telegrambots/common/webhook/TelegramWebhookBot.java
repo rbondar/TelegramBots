@@ -8,7 +8,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
  * @version 1.0
  */
 public interface TelegramWebhookBot {
-    WebhookTelegramUpdateConsumer updatesConsumer();
+    WebhookTelegramUpdateConsumer getUpdatesConsumer();
 
     /**
      * Execute setWebhook method to set up the url of the webhook

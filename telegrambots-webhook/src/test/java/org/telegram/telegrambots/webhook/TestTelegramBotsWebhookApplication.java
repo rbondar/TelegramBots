@@ -229,7 +229,7 @@ public class TestTelegramBotsWebhookApplication {
         }
 
         @Override
-        public WebhookTelegramUpdateConsumer updatesConsumer() {
+        public WebhookTelegramUpdateConsumer getUpdatesConsumer() {
             return new WebhookTelegramUpdateConsumer() {
                 @Override
                 public BotApiMethod<?> consume(Update update) {
