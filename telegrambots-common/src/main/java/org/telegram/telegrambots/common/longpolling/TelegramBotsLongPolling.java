@@ -1,6 +1,11 @@
 package org.telegram.telegrambots.common.longpolling;
 
+import org.telegram.telegrambots.common.TelegramUrl;
+import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Ruben Bermudez
@@ -14,7 +19,14 @@ public interface TelegramBotsLongPolling extends AutoCloseable {
      *
      * @throws TelegramApiException if any issue registering the bot or the bot is already registered
      */
-    void registerBot(TelegramLongPollingBot telegramLongPollingBot, LongPollingTelegramUpdatesConsumer telegramUpdatesConsumer) throws TelegramApiException;
+    void registerBot(
+            String botToken,
+            Supplier<TelegramUrl> telegramUrlSupplier,
+            Function<Integer, GetUpdates> getUpdatesSupplier,
+            LongPollingTelegramUpdatesConsumer updatesConsumer
+    ) throws TelegramApiException;
+
+
 
     /**
      * Use this method to unregister a bot in the long polling app.
@@ -23,7 +35,7 @@ public interface TelegramBotsLongPolling extends AutoCloseable {
      *
      * @throws TelegramApiException if any issue unregistering the bot or the bot is not registerd
      */
-    void unregisterBot(TelegramLongPollingBot telegramLongPollingBot) throws TelegramApiException;
+    void unregisterBot(String botToken) throws TelegramApiException;
 
     /**
      * Checks if all bot sessions are running

@@ -2,14 +2,18 @@ package org.telegram.telegrambots.longpolling;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
 import okhttp3.HttpUrl;
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.common.TelegramUrl;
-import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
+import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
+import org.telegram.telegrambots.longpolling.util.DefaultTelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.ApiResponse;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -24,17 +28,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class TestTelegramBotsLongPollingApplicationIntegration {
     private MockWebServer webServer;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private TelegramLongPollingBotTest telegramLongPollingBotTest;
-
+    private TelegramUrl telegramUrl;
     private TelegramBotsLongPollingApplication application;
 
     @BeforeEach
     public void setUp() {
-        telegramLongPollingBotTest = new TelegramLongPollingBotTest();
         webServer = new MockWebServer();
         HttpUrl mockUrl = webServer.url("");
-        telegramLongPollingBotTest.setBaseUrl(TelegramUrl.builder().schema(mockUrl.scheme()).host(mockUrl.host()).port(mockUrl.port()).build());
+        telegramUrl = TelegramUrl.builder().schema(mockUrl.scheme()).host(mockUrl.host()).port(mockUrl.port()).build();
         application = new TelegramBotsLongPollingApplication();
     }
 
@@ -48,15 +49,38 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
         try {
             List<Update> updateReceived = new ArrayList<>();
 
-            webServer.enqueue(mockResponse(getFakeUpdates1()));
-            webServer.enqueue(mockResponse(getFakeUpdates2()));
-
-            application.registerBot(telegramLongPollingBotTest, new LongPollingTelegramUpdatesConsumer() {
+            Dispatcher dispatcher = new Dispatcher() {
+                @NonNull
                 @Override
-                public void consume(Update update) {
-                    updateReceived.add(update);
+                public MockResponse dispatch(@NonNull RecordedRequest request) throws InterruptedException {
+                    try {
+                        switch (request.getPath()) {
+                            case "/botTOKEN/deleteWebhook":
+                                return mockResponse(ApiResponse.<Boolean>builder().ok(true).result(true).build());
+                            case "/botTOKEN/getupdates":
+                                if (request.getSequenceNumber() == 1) {
+                                    return mockResponse(getFakeUpdates1());
+                                } else {
+                                    return mockResponse(getFakeUpdates2());
+                                }
+                        }
+                    } catch (Exception e) {
+                        return new MockResponse().setResponseCode(404);
+                    }
+                    return new MockResponse().setResponseCode(404);
                 }
-            });
+            };
+            webServer.setDispatcher(dispatcher);
+
+            application.registerBot("TOKEN",
+                    () -> telegramUrl,
+                    new DefaultGetUpdatesGenerator(),
+                    new DefaultTelegramUpdateConsumer() {
+                        @Override
+                        public void consume(Update update) {
+                            updateReceived.add(update);
+                        }
+                    });
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 4);
 

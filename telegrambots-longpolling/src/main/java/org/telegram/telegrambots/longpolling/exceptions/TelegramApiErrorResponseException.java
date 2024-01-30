@@ -5,8 +5,16 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class TelegramApiErrorResponseException extends TelegramApiException {
     private final int code;
 
+    public TelegramApiErrorResponseException(String message) {
+        this(message, null);
+    }
+
     public TelegramApiErrorResponseException(Throwable cause) {
-        super(cause);
+        this(null, cause);
+    }
+
+    public TelegramApiErrorResponseException(String message, Throwable cause) {
+        super(message, cause);
         this.code = -1;
     }
 

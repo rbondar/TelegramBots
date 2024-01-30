@@ -46,8 +46,8 @@ public class TelegramOkHttpClientFactory {
 
     @RequiredArgsConstructor
     public static class ProxyOkHttpClientCreator extends DefaultOkHttpClientCreator {
-        private Supplier<Proxy> proxySupplier;
-        private Supplier<Authenticator> authenticatorSupplier;
+        private final Supplier<Proxy> proxySupplier;
+        private final Supplier<Authenticator> authenticatorSupplier;
 
         @Override
         public OkHttpClient get() {

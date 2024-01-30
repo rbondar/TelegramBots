@@ -1,5 +1,6 @@
 package org.telegram.telegrambots.longpolling;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.NonNull;
@@ -11,16 +12,19 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.telegram.telegrambots.common.TelegramUrl;
 import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
-import org.telegram.telegrambots.common.longpolling.TelegramLongPollingBot;
 import org.telegram.telegrambots.longpolling.exceptions.TelegramApiErrorResponseException;
 import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.updates.DeleteWebhook;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.meta.generics.BackOff;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -29,33 +33,44 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static java.util.Optional.ofNullable;
 
 @Data
 @Slf4j
 public class BotSession implements AutoCloseable {
     private final BackOff backOff = new ExponentialBackOff();
-    private final LongPollingTelegramUpdatesConsumer updatesConsumer;
+
 
     private AtomicBoolean running = new AtomicBoolean(false);
     private AtomicInteger lastReceivedUpdate = new AtomicInteger(0);
 
-    private final TelegramLongPollingBot telegramLongPollingBot;
     private final ObjectMapper objectMapper;
     private final OkHttpClient okHttpClient;
     private final ScheduledExecutorService executor;
+    private final String botToken;
+    private final LongPollingTelegramUpdatesConsumer updatesConsumer;
+    private final Supplier<TelegramUrl> telegramUrlSupplier;
+    private final Function<Integer, GetUpdates> getUpdatesGenerator;
 
     private volatile ScheduledFuture<?> runningPolling = null;
 
-    public BotSession(TelegramLongPollingBot telegramLongPollingBot,
-                      LongPollingTelegramUpdatesConsumer updatesConsumer,
-                      ObjectMapper objectMapper,
+    public BotSession(ObjectMapper objectMapper,
                       OkHttpClient okHttpClient,
-                      ScheduledExecutorService executor) {
-        this.telegramLongPollingBot = telegramLongPollingBot;
-        this.objectMapper = objectMapper;
+                      ScheduledExecutorService executor,
+                      String botToken,
+                      Supplier<TelegramUrl> telegramUrlSupplier,
+                      Function<Integer, GetUpdates> getUpdatesGenerator,
+                      LongPollingTelegramUpdatesConsumer updatesConsumer) {
         this.executor = executor;
         this.okHttpClient = okHttpClient;
         this.updatesConsumer = updatesConsumer;
+        this.botToken = botToken;
+        this.telegramUrlSupplier = telegramUrlSupplier;
+        this.getUpdatesGenerator = getUpdatesGenerator;
+        this.objectMapper = objectMapper;
     }
 
     public void start() throws TelegramApiException {
@@ -82,7 +97,7 @@ public class BotSession implements AutoCloseable {
 
     @NonNull
     private ScheduledFuture<?> createPollerTask() throws TelegramApiException {
-        telegramLongPollingBot.deleteWebhook();
+        executeDeleteWebhook();
         return executor.scheduleAtFixedRate(() -> {
             try {
                 List<Update> updates = getUpdatesFromTelegram();
@@ -90,7 +105,7 @@ public class BotSession implements AutoCloseable {
                 backOff.reset();
                 // Handle updates
                 if (!updates.isEmpty()) {
-                    updates.removeIf(x -> x.getUpdateId() < lastReceivedUpdate.get());
+                    updates.removeIf(x -> x.getUpdateId() <= lastReceivedUpdate.get());
                     lastReceivedUpdate.set(updates.parallelStream()
                             .mapToInt(Update::getUpdateId)
                             .max()
@@ -114,26 +129,15 @@ public class BotSession implements AutoCloseable {
 
     private List<Update> getUpdatesFromTelegram() throws TelegramApiRequestException, TelegramApiErrorResponseException {
         try {
-            Request request = new Request.Builder()
-                    .url(
-                            new HttpUrl
-                                    .Builder()
-                                    .scheme(telegramLongPollingBot.getBaseUrl().getSchema())
-                                    .host(telegramLongPollingBot.getBaseUrl().getHost())
-                                    .port(telegramLongPollingBot.getBaseUrl().getPort())
-                                    .addPathSegment("bot" + telegramLongPollingBot.getBotToken())
-                                    .addPathSegment(GetUpdates.PATH)
-                                    .build()
-                    )
-                    .header("charset", StandardCharsets.UTF_8.name())
-                    .post(RequestBody.create(objectMapper.writeValueAsString(telegramLongPollingBot.getUpdatesRequest(lastReceivedUpdate.get())), MediaType.parse("application/json")))
-                    .build();
+            TelegramUrl telegramUrl = telegramUrlSupplier.get();
+            GetUpdates getUpdates = getUpdatesGenerator.apply(lastReceivedUpdate.get());
+            Request request = createRequest(telegramUrl, getUpdates);
 
             try (Response response = okHttpClient.newCall(request).execute()) {
                 if (response.isSuccessful()) {
                     try (ResponseBody body = response.body()) {
                         if (body != null) {
-                            List<Update> updates = telegramLongPollingBot.getUpdatesRequest(lastReceivedUpdate.get()).deserializeResponse(body.string());
+                            List<Update> updates = getUpdates.deserializeResponse(body.string());
                             // Reset backup with every successful request
                             backOff.reset();
                             return updates;
@@ -148,5 +152,50 @@ public class BotSession implements AutoCloseable {
         }
 
         return Collections.emptyList();
+    }
+
+    private void executeDeleteWebhook() throws TelegramApiRequestException, TelegramApiErrorResponseException {
+        DeleteWebhook deleteWebhook = new DeleteWebhook();
+        try {
+            Request request = createRequest(telegramUrlSupplier.get(), deleteWebhook);
+            try (Response response = okHttpClient.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    try (ResponseBody body = response.body()) {
+                        if (body != null) {
+                            Boolean result = deleteWebhook.deserializeResponse(body.string());
+                            if (!ofNullable(result).orElse(false)) {
+                                throw new TelegramApiErrorResponseException("Unable to delete Webhook");
+                            }
+                        }
+                    }
+                } else {
+                    throw new TelegramApiErrorResponseException(response.code(), response.message());
+                }
+            }
+        } catch (IOException e) {
+            throw new TelegramApiErrorResponseException("Unable to execute " + deleteWebhook.getMethod() + " method", e);
+        }
+    }
+
+    @NonNull
+    private Request createRequest(TelegramUrl telegramUrl, BotApiMethod<?> apiMethod) throws JsonProcessingException {
+        return new Request.Builder()
+                .url(buildUrl(telegramUrl, apiMethod.getMethod()))
+                .header("charset", StandardCharsets.UTF_8.name())
+                .header("content-type", "application/json")
+                .post(RequestBody.create(objectMapper.writeValueAsString(apiMethod), MediaType.parse("application/json")))
+                .build();
+    }
+
+    @NonNull
+    private HttpUrl buildUrl(TelegramUrl telegramUrl, String methodPath) {
+        return new HttpUrl
+                .Builder()
+                .scheme(telegramUrl.getSchema())
+                .host(telegramUrl.getHost())
+                .port(telegramUrl.getPort())
+                .addPathSegment("bot" + botToken)
+                .addPathSegment(methodPath)
+                .build();
     }
 }
