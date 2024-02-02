@@ -13,6 +13,7 @@
  */
 package org.telegram.telegrambots.longpolling.util;
 
+import lombok.Getter;
 import org.telegram.telegrambots.meta.generics.BackOff;
 
 /**
@@ -68,6 +69,7 @@ import org.telegram.telegrambots.meta.generics.BackOff;
  * @since 1.15
  * @author Ravi Mistry
  */
+@Getter
 public class ExponentialBackOff implements BackOff {
     /** The default initial interval value in milliseconds (0.5 seconds). */
     private static final int DEFAULT_INITIAL_INTERVAL_MILLIS = 500;
@@ -205,7 +207,7 @@ public class ExponentialBackOff implements BackOff {
      * Returns a random value from the interval [randomizationFactor * currentInterval,
      * randomizationFactor * currentInterval].
      */
-    private static int getRandomValueFromInterval(
+    static int getRandomValueFromInterval(
             double randomizationFactor, double random, int currentIntervalMillis) {
         double delta = randomizationFactor * currentIntervalMillis;
         double minInterval = currentIntervalMillis - delta;
