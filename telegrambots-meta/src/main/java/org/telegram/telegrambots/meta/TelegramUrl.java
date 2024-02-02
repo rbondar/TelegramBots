@@ -1,4 +1,4 @@
-package org.telegram.telegrambots.common;
+package org.telegram.telegrambots.meta;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

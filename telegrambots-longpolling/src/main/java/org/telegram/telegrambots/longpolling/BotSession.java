@@ -12,10 +12,10 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.telegram.telegrambots.common.TelegramUrl;
-import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
+import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.longpolling.exceptions.TelegramApiErrorResponseException;
 import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
+import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.DeleteWebhook;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
@@ -51,7 +51,7 @@ public class BotSession implements AutoCloseable {
     private final OkHttpClient okHttpClient;
     private final ScheduledExecutorService executor;
     private final String botToken;
-    private final LongPollingTelegramUpdatesConsumer updatesConsumer;
+    private final TelegramUpdateConsumer updatesConsumer;
     private final Supplier<TelegramUrl> telegramUrlSupplier;
     private final Function<Integer, GetUpdates> getUpdatesGenerator;
 
@@ -63,7 +63,7 @@ public class BotSession implements AutoCloseable {
                       String botToken,
                       Supplier<TelegramUrl> telegramUrlSupplier,
                       Function<Integer, GetUpdates> getUpdatesGenerator,
-                      LongPollingTelegramUpdatesConsumer updatesConsumer) {
+                      TelegramUpdateConsumer updatesConsumer) {
         this.executor = executor;
         this.okHttpClient = okHttpClient;
         this.updatesConsumer = updatesConsumer;
@@ -109,7 +109,7 @@ public class BotSession implements AutoCloseable {
                     lastReceivedUpdate.set(updates.parallelStream()
                             .mapToInt(Update::getUpdateId)
                             .max()
-                            .orElse(0));
+                            .orElse( lastReceivedUpdate.get()));
                     updatesConsumer.consume(updates);
                 }
             } catch (TelegramApiErrorResponseException e) {

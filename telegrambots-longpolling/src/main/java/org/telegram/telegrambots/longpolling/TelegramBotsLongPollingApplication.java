@@ -3,12 +3,10 @@ package org.telegram.telegrambots.longpolling;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import org.telegram.telegrambots.common.TelegramUrl;
-import org.telegram.telegrambots.common.longpolling.LongPollingTelegramUpdatesConsumer;
-import org.telegram.telegrambots.common.longpolling.TelegramBotsLongPolling;
+import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
-import org.telegram.telegrambots.longpolling.util.DefaultTelegramUpdateConsumer;
 import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
+import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -19,7 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Slf4j
-public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolling {
+public class TelegramBotsLongPollingApplication implements AutoCloseable {
     private final Supplier<ObjectMapper> objectMapperSupplier;
     private final Supplier<OkHttpClient> okHttpClientCreator;
     private final Supplier<ScheduledExecutorService> executorSupplier;
@@ -45,15 +43,14 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
         this.executorSupplier = executorSupplier;
     }
 
-    public void registerBot(String botToken, DefaultTelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
+    public void registerBot(String botToken, TelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
         registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), defaultUpdatesConsumer);
     }
 
-    @Override
     public void registerBot(String botToken,
                             Supplier<TelegramUrl> telegramUrlSupplier,
                             Function<Integer, GetUpdates> getUpdatesGenerator,
-                            LongPollingTelegramUpdatesConsumer updatesConsumer) throws TelegramApiException {
+                            TelegramUpdateConsumer updatesConsumer) throws TelegramApiException {
         if (botSessions.containsKey(botToken)) {
             throw new TelegramApiException("Bot is already registered");
         } else {
@@ -70,7 +67,6 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
         }
     }
 
-    @Override
     public void unregisterBot(String botToken) throws TelegramApiException {
         if (botSessions.containsKey(botToken)) {
             BotSession botSession = botSessions.remove(botToken);
@@ -80,12 +76,10 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
         }
     }
 
-    @Override
     public boolean isRunning() {
         return botSessions.values().stream().allMatch(BotSession::isRunning);
     }
 
-    @Override
     public void start() throws TelegramApiException {
         if (botSessions.values().stream().allMatch(BotSession::isRunning)) {
             throw new TelegramApiException("All bots already running");
@@ -97,7 +91,6 @@ public class TelegramBotsLongPollingApplication implements TelegramBotsLongPolli
         }
     }
 
-    @Override
     public void stop() throws TelegramApiException {
         if (botSessions.values().stream().noneMatch(BotSession::isRunning)) {
             throw new TelegramApiException("All bots already running");

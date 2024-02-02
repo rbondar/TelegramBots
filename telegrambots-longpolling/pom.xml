@@ -61,7 +61,7 @@
     <dependencies>
         <dependency>
             <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-common</artifactId>
+            <artifactId>telegrambots-meta</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

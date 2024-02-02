@@ -11,9 +11,9 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.common.TelegramUrl;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
-import org.telegram.telegrambots.longpolling.util.DefaultTelegramUpdateConsumer;
+import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.meta.api.objects.ApiResponse;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestTelegramBotsLongPollingApplicationIntegration {
@@ -75,16 +74,13 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new DefaultTelegramUpdateConsumer() {
-                        @Override
+                    new TelegramUpdateConsumer() {
                         public void consume(Update update) {
                             updateReceived.add(update);
                         }
                     });
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 4);
-
-            assertEquals(4, updateReceived.size());
         } catch (Exception e) {
             fail(e);
         }

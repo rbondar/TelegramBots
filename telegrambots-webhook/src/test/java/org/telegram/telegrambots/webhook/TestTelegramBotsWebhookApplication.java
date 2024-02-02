@@ -10,8 +10,6 @@ import okhttp3.RequestBody;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.common.webhook.TelegramWebhookBot;
-import org.telegram.telegrambots.common.webhook.WebhookTelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -24,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -63,22 +60,6 @@ public class TestTelegramBotsWebhookApplication {
     @AfterEach
     public void tearDown() {
         application.close();
-    }
-
-    @Test
-    public void testWhenExceptionRaisedDuringSetWebhook() {
-        telegramWebhookBot = new TestTelegramWebhookBot("/test", true, false);
-
-        assertThrows(TelegramApiException.class, () -> application.registerBot(telegramWebhookBot));
-    }
-
-    @Test
-    public void testWhenExceptionRaisedDuringDeleteWebhook() throws TelegramApiException {
-        telegramWebhookBot = new TestTelegramWebhookBot("/test", false, true);
-        application.registerBot(telegramWebhookBot);
-
-        assertTrue(telegramWebhookBot.isSetWebhookCalled());
-        assertThrows(TelegramApiException.class, () -> application.unregisterBot(telegramWebhookBot));
     }
 
     @Test
@@ -210,7 +191,7 @@ public class TestTelegramBotsWebhookApplication {
 
 
     @Getter
-    private static class TestTelegramWebhookBot implements TelegramWebhookBot {
+    private static class TestTelegramWebhookBot extends TelegramWebhookBot {
         private final boolean exceptionWhenSettingWebhook;
         private final boolean exceptionWhenDeletingWebhook;
         private final String path;
@@ -222,37 +203,27 @@ public class TestTelegramBotsWebhookApplication {
             this(path, false, false);
         }
 
-        public TestTelegramWebhookBot(String path, boolean exceptionWhenSettingWebhook, boolean exceptionWhenDeletingWebhook) {
-            this.path = path;
+        public TestTelegramWebhookBot(String botPath, boolean exceptionWhenSettingWebhook, boolean exceptionWhenDeletingWebhook) {
+            super(botPath, null, null, null);
+            this.path = botPath;
             this.exceptionWhenSettingWebhook = exceptionWhenSettingWebhook;
             this.exceptionWhenDeletingWebhook = exceptionWhenDeletingWebhook;
         }
 
         @Override
-        public WebhookTelegramUpdateConsumer getUpdatesConsumer() {
-            return new WebhookTelegramUpdateConsumer() {
-                @Override
-                public BotApiMethod<?> consume(Update update) {
-                    updateReceived = update;
-                    return null;
-                }
-            };
-        }
-
-        @Override
-        public void setWebhook() throws TelegramApiException {
+        public void runSetWebhook() {
             setWebhookCalled = true;
-            if (exceptionWhenSettingWebhook) {
-                throw new TelegramApiException("Error in webhook");
-            }
         }
 
         @Override
-        public void deleteWebhook() throws TelegramApiException {
+        public void runDeleteWebhook() {
             deleteWebhookCalled = true;
-            if (exceptionWhenDeletingWebhook) {
-                throw new TelegramApiException("Error in webhook");
-            }
+        }
+
+        @Override
+        public BotApiMethod<?> consumeUpdate(Update update) {
+            updateReceived = update;
+            return null;
         }
 
         @Override

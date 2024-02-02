@@ -12,7 +12,6 @@
     <modules>
         <module>telegrambots-meta</module>
         <module>telegrambots-longpolling</module>
-        <module>telegrambots-common</module>
         <module>telegrambots-webhook</module>
         <module>telegrambots-client</module>
         <!--
