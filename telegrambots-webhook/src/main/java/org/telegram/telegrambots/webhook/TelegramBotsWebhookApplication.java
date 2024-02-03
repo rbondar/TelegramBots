@@ -1,7 +1,7 @@
 package org.telegram.telegrambots.webhook;
 
 import io.javalin.Javalin;
-import io.javalin.community.ssl.SSLPlugin;
+import io.javalin.community.ssl.SslPlugin;
 import io.javalin.http.ContentType;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -136,7 +136,7 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
                     for (Map.Entry<String, TelegramWebhookBot> bot : registeredBots.entrySet()) {
                         bot.getValue().runDeleteWebhook();
                     }
-                    app.close();
+                    app.stop();
                     app = null;
                     isRunning.set(false);
                 } else {
@@ -151,27 +151,26 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
     private void startServerInternal() throws TelegramApiException {
         app = Javalin
                 .create(javalinConfig -> {
-                    SSLPlugin sslPlugin = new SSLPlugin(conf -> {
+                    SslPlugin sslPlugin = new SslPlugin(conf -> {
                         if (webhookOptions.getUseHttps()) {
                             conf.keystoreFromPath(webhookOptions.getKeyStorePath(), webhookOptions.getKeyStorePassword());
                             conf.insecure = false;
                             conf.secure = true;
                             conf.securePort = webhookOptions.getPort();
-                            javalinConfig.plugins.enableSslRedirects();
+                            javalinConfig.bundledPlugins.enableSslRedirects();
                         } else {
                             conf.insecure = true;
                             conf.secure = false;
                             conf.insecurePort = webhookOptions.getPort();
                         }
                     });
-                    javalinConfig.plugins.register(sslPlugin);
+                    javalinConfig.registerPlugin(sslPlugin);
                     javalinConfig.http.defaultContentType = ContentType.JSON;
                     javalinConfig.requestLogger.http((ctx, executionTimeMs) -> {
                         if (webhookOptions.getEnableRequestLogging()) {
                             log.info("Webhook {} request received from {}", ctx.method(), ctx.req().getRemoteAddr());
                         }
                     });
-
                 })
                 .events(events -> {
                     events.serverStarted(() -> log.info("Webhook server started"));
@@ -199,6 +198,6 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
 
     @Override
     public void close() {
-        app.close();
+        app.stop();
     }
 }

@@ -12,10 +12,10 @@ import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQuery
 import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQueryResultsButton;
 
 import java.time.OffsetTime;
-import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Ruben Bermudez
@@ -42,10 +42,7 @@ public class TestSerialization {
         OffsetTime now = OffsetTime.now().withHour(9).withMinute(0).withNano(0).withSecond(0);
         OffsetTime myTime = mapper.readValue(time, MyClass.class).time;
 
-        System.err.println("Time: " + myTime.withOffsetSameInstant(ZoneOffset.UTC));
-        System.err.println("Now: " + now.withOffsetSameInstant(ZoneOffset.UTC));
-        // ahora antes que valor
-        System.err.println(now.isBefore(myTime));
+        assertTrue(now.isBefore(myTime));
     }
 
     //@BeforeEach
