@@ -3,26 +3,34 @@ package org.telegram.telegrambots.longpolling;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
 import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
 import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
 import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.BackOff;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Slf4j
 public class TelegramBotsLongPollingApplication implements AutoCloseable {
+    private final AtomicBoolean isAppRunning = new AtomicBoolean(true);
+
     private final Supplier<ObjectMapper> objectMapperSupplier;
     private final Supplier<OkHttpClient> okHttpClientCreator;
     private final Supplier<ScheduledExecutorService> executorSupplier;
+    private final Supplier<BackOff> backOffSupplier;
+
 
     private final ConcurrentHashMap<String, BotSession> botSessions = new ConcurrentHashMap<>();
+
     public TelegramBotsLongPollingApplication() {
         this(ObjectMapper::new);
     }
@@ -38,9 +46,17 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
     public TelegramBotsLongPollingApplication(Supplier<ObjectMapper> objectMapperSupplier,
                                               Supplier<OkHttpClient> okHttpClientCreator,
                                               Supplier<ScheduledExecutorService> executorSupplier) {
+        this(objectMapperSupplier, okHttpClientCreator, executorSupplier, ExponentialBackOff::new);
+    }
+
+    public TelegramBotsLongPollingApplication(Supplier<ObjectMapper> objectMapperSupplier,
+                                              Supplier<OkHttpClient> okHttpClientCreator,
+                                              Supplier<ScheduledExecutorService> executorSupplier,
+                                              Supplier<BackOff> backOffSupplier) {
         this.objectMapperSupplier = objectMapperSupplier;
         this.okHttpClientCreator = okHttpClientCreator;
         this.executorSupplier = executorSupplier;
+        this.backOffSupplier = backOffSupplier;
     }
 
     public void registerBot(String botToken, TelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
@@ -61,9 +77,13 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
                     botToken,
                     telegramUrlSupplier,
                     getUpdatesGenerator,
-                    updatesConsumer);
+                    backOffSupplier,
+                    updatesConsumer
+                    );
             botSessions.put(botToken, botSession);
-            botSession.start();
+            if (isAppRunning.get()) {
+                botSession.start();
+            }
         }
     }
 
@@ -77,13 +97,17 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
     }
 
     public boolean isRunning() {
-        return botSessions.values().stream().allMatch(BotSession::isRunning);
+        return isAppRunning.get() && botSessions.values().stream().allMatch(BotSession::isRunning);
     }
 
     public void start() throws TelegramApiException {
-        if (botSessions.values().stream().allMatch(BotSession::isRunning)) {
+        if (isAppRunning.get()) {
+            throw new TelegramApiException("App is already running");
+        }
+        if (!botSessions.isEmpty() && botSessions.values().stream().allMatch(BotSession::isRunning)) {
             throw new TelegramApiException("All bots already running");
         }
+        isAppRunning.set(true);
         for (BotSession botSession : botSessions.values()) {
             if (!botSession.isRunning()) {
                 botSession.start();
@@ -92,9 +116,13 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
     }
 
     public void stop() throws TelegramApiException {
-        if (botSessions.values().stream().noneMatch(BotSession::isRunning)) {
-            throw new TelegramApiException("All bots already running");
+        if (!isAppRunning.get()) {
+            throw new TelegramApiException("App is not running");
         }
+        if (!botSessions.isEmpty() && botSessions.values().stream().noneMatch(BotSession::isRunning)) {
+            throw new TelegramApiException("All bots already stopped");
+        }
+        isAppRunning.set(false);
         for (BotSession botSession : botSessions.values()) {
             if (botSession.isRunning()) {
                 botSession.stop();
@@ -104,6 +132,7 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        isAppRunning.set(false);
         for (BotSession botSession : botSessions.values()) {
             if (botSession != null) {
                 botSession.close();

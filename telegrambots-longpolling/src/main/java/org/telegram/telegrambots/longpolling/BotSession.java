@@ -12,10 +12,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.longpolling.exceptions.TelegramApiErrorResponseException;
-import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
 import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.DeleteWebhook;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
@@ -41,7 +40,7 @@ import static java.util.Optional.ofNullable;
 @Data
 @Slf4j
 public class BotSession implements AutoCloseable {
-    private final BackOff backOff = new ExponentialBackOff();
+
 
 
     private AtomicBoolean running = new AtomicBoolean(false);
@@ -54,6 +53,7 @@ public class BotSession implements AutoCloseable {
     private final TelegramUpdateConsumer updatesConsumer;
     private final Supplier<TelegramUrl> telegramUrlSupplier;
     private final Function<Integer, GetUpdates> getUpdatesGenerator;
+    private final BackOff backOff;
 
     private volatile ScheduledFuture<?> runningPolling = null;
 
@@ -63,6 +63,7 @@ public class BotSession implements AutoCloseable {
                       String botToken,
                       Supplier<TelegramUrl> telegramUrlSupplier,
                       Function<Integer, GetUpdates> getUpdatesGenerator,
+                      Supplier<BackOff> backOffSupplier,
                       TelegramUpdateConsumer updatesConsumer) {
         this.executor = executor;
         this.okHttpClient = okHttpClient;
@@ -71,6 +72,7 @@ public class BotSession implements AutoCloseable {
         this.telegramUrlSupplier = telegramUrlSupplier;
         this.getUpdatesGenerator = getUpdatesGenerator;
         this.objectMapper = objectMapper;
+        this.backOff = backOffSupplier.get();
     }
 
     public void start() throws TelegramApiException {
