@@ -52,23 +52,13 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
             Runnable setWebhook,
             Runnable deleteWebhook
     ) throws TelegramApiException {
-        if (isRunning()) {
-            TelegramWebhookBot bot = TelegramWebhookBot
-                    .builder()
-                    .botPath(botPath)
-                    .updateHandler(updateHandler)
-                    .setWebhook(setWebhook)
-                    .deleteWebhook(deleteWebhook)
-                    .build();
-            if (registeredBots.put(botPath, bot) == null) {
-                setPostHandler(bot);
-            } else {
-                stop();
-                start();
-            }
-        } else {
-            throw new TelegramApiException("Server is not running");
-        }
+        registerBot(TelegramWebhookBot
+                .builder()
+                .botPath(botPath)
+                .updateHandler(updateHandler)
+                .setWebhook(setWebhook)
+                .deleteWebhook(deleteWebhook)
+                .build());
     }
 
     /**
@@ -119,15 +109,7 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
      * @implNote This will trigger a restart of the webhook server
      */
     public void unregisterBot(TelegramWebhookBot telegramWebhookBot) throws TelegramApiException {
-        if (isRunning()) {
-            if (registeredBots.remove(telegramWebhookBot.getBotPath()) != null) {
-                telegramWebhookBot.runDeleteWebhook();
-                stop();
-                start();
-            }
-        } else {
-            throw new TelegramApiException("Server is not running");
-        }
+        this.unregisterBot(telegramWebhookBot.getBotPath());
     }
 
     public boolean isRunning() {
