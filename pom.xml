@@ -14,7 +14,7 @@
         <module>telegrambots-longpolling</module>
         <module>telegrambots-webhook</module>
         <module>telegrambots-client</module>
-        <module>telegrambots-spring-logpolling-boot-starter</module>
+        <module>telegrambots-spring-longpolling-boot-starter</module>
         <!--
          <module>telegrambots</module>
         <module>telegrambots-extensions</module>
