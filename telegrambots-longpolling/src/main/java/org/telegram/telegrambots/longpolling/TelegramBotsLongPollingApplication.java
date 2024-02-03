@@ -59,11 +59,11 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
         this.backOffSupplier = backOffSupplier;
     }
 
-    public void registerBot(String botToken, TelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
-        registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), defaultUpdatesConsumer);
+    public BotSession registerBot(String botToken, TelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
+        return registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), defaultUpdatesConsumer);
     }
 
-    public void registerBot(String botToken,
+    public BotSession registerBot(String botToken,
                             Supplier<TelegramUrl> telegramUrlSupplier,
                             Function<Integer, GetUpdates> getUpdatesGenerator,
                             TelegramUpdateConsumer updatesConsumer) throws TelegramApiException {
@@ -84,6 +84,7 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
             if (isAppRunning.get()) {
                 botSession.start();
             }
+            return botSession;
         }
     }
 

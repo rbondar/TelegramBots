@@ -14,11 +14,12 @@
         <module>telegrambots-longpolling</module>
         <module>telegrambots-webhook</module>
         <module>telegrambots-client</module>
+        <module>telegrambots-spring-logpolling-boot-starter</module>
         <!--
          <module>telegrambots</module>
         <module>telegrambots-extensions</module>
         <module>telegrambots-abilities</module>
-        <module>telegrambots-spring-boot-starter</module>
+        <module>telegrambots-spring-boot-starter</module> # Deprecated
         <module>telegrambots-chat-session-bot</module>
         -->
     </modules>
@@ -85,6 +86,7 @@
         <commons-io.version>2.11.0</commons-io.version>
         <okhttp.version>4.12.0</okhttp.version>
         <awaitability.version>3.0.0</awaitability.version>
+        <spring.version>3.2.2</spring.version>
     </properties>
 
     <dependencyManagement>
@@ -164,6 +166,15 @@
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+
 
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>

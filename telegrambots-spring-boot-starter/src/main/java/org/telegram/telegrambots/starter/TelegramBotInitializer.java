@@ -52,11 +52,11 @@ public class TelegramBotInitializer implements InitializingBean {
         }		
 	}
 
-	private void handleAnnotatedMethod(Object bot, Method method, BotSession session) {
+    private void handleAnnotatedMethod(Object bot, Method method, BotSession session) {
         try {
             if (method.getParameterCount() > 1) {
                 log.warn(format("Method %s of Type %s has too many parameters",
-                                method.getName(), method.getDeclaringClass().getCanonicalName()));
+                        method.getName(), method.getDeclaringClass().getCanonicalName()));
                 return;
             }
             if (method.getParameterCount() == 0) {
@@ -68,7 +68,7 @@ public class TelegramBotInitializer implements InitializingBean {
                 return;
             }
             log.warn(format("Method %s of Type %s has invalid parameter type",
-                            method.getName(), method.getDeclaringClass().getCanonicalName()));
+                    method.getName(), method.getDeclaringClass().getCanonicalName()));
         } catch (InvocationTargetException | IllegalAccessException e) {
             log.error(format("Couldn't invoke Method %s of Type %s",
                     method.getName(), method.getDeclaringClass().getCanonicalName()));
