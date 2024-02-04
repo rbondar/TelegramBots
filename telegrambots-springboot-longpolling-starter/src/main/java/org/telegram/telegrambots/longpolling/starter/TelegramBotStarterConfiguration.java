@@ -21,9 +21,9 @@ public class TelegramBotStarterConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TelegramBotInitializer telegramBotInitializer(TelegramBotsLongPollingApplication telegramBotsApi,
+    public TelegramBotInitializer telegramBotInitializer(TelegramBotsLongPollingApplication telegramBotsApplication,
                                                          ObjectProvider<List<SpringLongPollingBot>> longPollingBots) {
-        return new TelegramBotInitializer(telegramBotsApi,
+        return new TelegramBotInitializer(telegramBotsApplication,
                 longPollingBots.getIfAvailable(Collections::emptyList));
     }
 }

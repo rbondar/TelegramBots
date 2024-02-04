@@ -2,6 +2,7 @@ package org.telegram.telegrambots.webhook;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -13,6 +14,7 @@ import java.util.function.Function;
  */
 @Data
 @Builder
+@RequiredArgsConstructor
 public class TelegramWebhookBot {
     private final String botPath;
     private final Function<Update, BotApiMethod<?>> updateHandler;

@@ -27,6 +27,10 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
 
     private Javalin app;
 
+    public TelegramBotsWebhookApplication() throws TelegramApiException {
+        this(WebhookOptions.builder().build());
+    }
+
     public TelegramBotsWebhookApplication(WebhookOptions webhookOptions) throws TelegramApiException {
         webhookOptions.validate();
         this.webhookOptions = webhookOptions;

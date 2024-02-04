@@ -10,7 +10,7 @@
         <version>7.0.0-rc0</version>
     </parent>
 
-    <artifactId>telegrambots-spring-longpolling-boot-starter</artifactId>
+    <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
     <packaging>jar</packaging>
 
     <name>Telegram Bots Long polling Spring Boot Starter</name>

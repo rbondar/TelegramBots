@@ -26,7 +26,7 @@ class TestTelegramBotStarterConfiguration {
                                                      TelegramBotStarterConfiguration.class));
 
     @Test
-    void createMockTelegramBotsApiWithDefaultSettings() {
+    void createMockTelegramApplicationWithDefaultSettings() {
         this.contextRunner.run((context) -> {
             assertThat(context).hasSingleBean(TelegramBotsLongPollingApplication.class);
             assertThat(context).hasSingleBean(TelegramBotInitializer.class);
@@ -41,10 +41,10 @@ class TestTelegramBotStarterConfiguration {
                 .run((context) -> {
                     assertThat(context).hasSingleBean(SpringLongPollingBot.class);
 
-                    TelegramBotsLongPollingApplication telegramBotsApi = context.getBean(TelegramBotsLongPollingApplication.class);
+                    TelegramBotsLongPollingApplication telegramApplication = context.getBean(TelegramBotsLongPollingApplication.class);
 
-                    verify(telegramBotsApi, times(1)).registerBot(anyString(), any(TelegramUpdateConsumer.class));
-                    verifyNoMoreInteractions(telegramBotsApi);
+                    verify(telegramApplication, times(1)).registerBot(anyString(), any(TelegramUpdateConsumer.class));
+                    verifyNoMoreInteractions(telegramApplication);
                 });
     }
 
