@@ -1,8 +1,8 @@
 package org.telegram.telegrambots.longpolling.starter;
 
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 
 public interface SpringLongPollingBot {
     String getBotToken();
-    TelegramUpdateConsumer getUpdatesConsumer();
+    LongPollingUpdateConsumer getUpdatesConsumer();
 }

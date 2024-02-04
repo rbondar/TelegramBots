@@ -13,7 +13,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.telegram.telegrambots.longpolling.exceptions.TelegramApiErrorResponseException;
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.DeleteWebhook;
@@ -50,7 +50,7 @@ public class BotSession implements AutoCloseable {
     private final OkHttpClient okHttpClient;
     private final ScheduledExecutorService executor;
     private final String botToken;
-    private final TelegramUpdateConsumer updatesConsumer;
+    private final LongPollingUpdateConsumer updatesConsumer;
     private final Supplier<TelegramUrl> telegramUrlSupplier;
     private final Function<Integer, GetUpdates> getUpdatesGenerator;
     private final BackOff backOff;
@@ -64,7 +64,7 @@ public class BotSession implements AutoCloseable {
                       Supplier<TelegramUrl> telegramUrlSupplier,
                       Function<Integer, GetUpdates> getUpdatesGenerator,
                       Supplier<BackOff> backOffSupplier,
-                      TelegramUpdateConsumer updatesConsumer) {
+                      LongPollingUpdateConsumer updatesConsumer) {
         this.executor = executor;
         this.okHttpClient = okHttpClient;
         this.updatesConsumer = updatesConsumer;

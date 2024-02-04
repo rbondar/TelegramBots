@@ -6,8 +6,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
+import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,7 +43,7 @@ class TestTelegramBotStarterConfiguration {
 
                     TelegramBotsLongPollingApplication telegramApplication = context.getBean(TelegramBotsLongPollingApplication.class);
 
-                    verify(telegramApplication, times(1)).registerBot(anyString(), any(TelegramUpdateConsumer.class));
+                    verify(telegramApplication, times(1)).registerBot(anyString(), any(LongPollingUpdateConsumer.class));
                     verifyNoMoreInteractions(telegramApplication);
                 });
     }
@@ -63,12 +63,7 @@ class TestTelegramBotStarterConfiguration {
         public SpringLongPollingBot longPollingBot() {
             SpringLongPollingBot springLongPollingBotMock = mock(SpringLongPollingBot.class);
             doReturn("").when(springLongPollingBotMock).getBotToken();
-            doReturn(new TelegramUpdateConsumer() {
-                @Override
-                public void consume(Update update) {
-
-                }
-            }).when(springLongPollingBotMock).getUpdatesConsumer();
+            doReturn((LongPollingSingleThreadUpdateConsumer) update -> {}).when(springLongPollingBotMock).getUpdatesConsumer();
             return springLongPollingBotMock;
         }
     }

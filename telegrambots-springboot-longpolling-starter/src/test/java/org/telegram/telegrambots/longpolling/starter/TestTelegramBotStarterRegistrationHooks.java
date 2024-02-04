@@ -8,8 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.longpolling.BotSession;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +37,7 @@ class TestTelegramBotStarterRegistrationHooks {
     @Test
     void longPollingBotWithAnnotatedMethodshouldBeCalled() throws TelegramApiException {
 
-        when(mockApplication.registerBot(anyString(), any(TelegramUpdateConsumer.class))).thenReturn(someBotSession);
+        when(mockApplication.registerBot(anyString(), any(LongPollingUpdateConsumer.class))).thenReturn(someBotSession);
 
         this.contextRunner.withUserConfiguration(LongPollingBotConfig.class)
                 .run((context) -> {
@@ -50,7 +49,7 @@ class TestTelegramBotStarterRegistrationHooks {
                     assertInstanceOf(AnnotatedLongPollingBot.class, bot);
                     assertTrue(((AnnotatedLongPollingBot) bot).isHookCalled());
                     assertEquals(someBotSession, ((AnnotatedLongPollingBot) bot).getHookCalledWithSession());
-                    verify(telegramBotsApi, times(1)).registerBot(eq(bot.getBotToken()), any(TelegramUpdateConsumer.class));
+                    verify(telegramBotsApi, times(1)).registerBot(eq(bot.getBotToken()), any(LongPollingUpdateConsumer.class));
                     verifyNoMoreInteractions(telegramBotsApi);
                 });
     }
@@ -96,13 +95,8 @@ class TestTelegramBotStarterRegistrationHooks {
         }
 
         @Override
-        public TelegramUpdateConsumer getUpdatesConsumer() {
-            return new TelegramUpdateConsumer() {
-                @Override
-                public void consume(Update update) {
-
-                }
-            };
+        public LongPollingUpdateConsumer getUpdatesConsumer() {
+            return update -> { };
         }
     }
 }

@@ -4,11 +4,10 @@ package org.telegram.telegrambots.extensions.bots.commandbot;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.CommandRegistry;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.IBotCommand;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.ICommandRegistry;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
-import org.telegram.telegrambots.webhook.TelegramWebhookBot;
 
 import java.util.Collection;
 import java.util.Map;
@@ -16,38 +15,33 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
- * This class adds command functionality to the TelegramWebhookBot
+ * This class adds command functionality to the TelegramLongPollingBot
  *
- * @author Andrey Korsakov (loolzaaa)
+ * @author Timo Schulz (Mit0x2)
  */
-public abstract class TelegramWebhookCommandBot extends TelegramWebhookBot implements CommandBot, ICommandRegistry {
+public abstract class CommandTelegramBot implements CommandBot, ICommandRegistry, LongPollingSingleThreadUpdateConsumer {
     private final CommandRegistry commandRegistry;
 
     /**
-     * Creates a TelegramWebhookCommandBot
+     * Creates a Bot for Long Polling
      * Use ICommandRegistry's methods on this bot to register commands
      *
      * @param telegramClient Telegram client used to send requests
      * @param allowCommandsWithUsername true to allow commands with parameters (default), false otherwise
      * @param botUsernameSupplier Bot username supplier
      *
-     * @param botPath Bot Path for the webhook
-     * @param setWebhook Set webhook method execution
-     * @param deleteWebhook Delete webhook method execution
      */
-    public TelegramWebhookCommandBot(
+    public CommandTelegramBot(
             TelegramClient telegramClient,
             boolean allowCommandsWithUsername,
-            Supplier<String> botUsernameSupplier,
-            String botPath,
-            Runnable setWebhook,
-            Runnable deleteWebhook) {
-        super(botPath, null, setWebhook, deleteWebhook);
+            Supplier<String> botUsernameSupplier) {
         this.commandRegistry = new CommandRegistry(telegramClient, allowCommandsWithUsername, botUsernameSupplier);
     }
 
+
+
     @Override
-    public BotApiMethod<?> consumeUpdate(Update update) {
+    public final void consume(Update update) {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             if (message.isCommand() && !filter(message)) {
@@ -55,11 +49,10 @@ public abstract class TelegramWebhookCommandBot extends TelegramWebhookBot imple
                     //we have received a not registered command, handle it as invalid
                     processInvalidCommandUpdate(update);
                 }
-                return null;
+                return;
             }
         }
         processNonCommandUpdate(update);
-        return null;
     }
 
     @Override

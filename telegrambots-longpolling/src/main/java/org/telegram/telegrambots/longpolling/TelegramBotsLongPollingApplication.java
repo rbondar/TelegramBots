@@ -3,11 +3,11 @@ package org.telegram.telegrambots.longpolling;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
-import org.telegram.telegrambots.meta.TelegramUrl;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
+import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
 import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.meta.api.methods.updates.GetUpdates;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.BackOff;
@@ -59,14 +59,14 @@ public class TelegramBotsLongPollingApplication implements AutoCloseable {
         this.backOffSupplier = backOffSupplier;
     }
 
-    public BotSession registerBot(String botToken, TelegramUpdateConsumer defaultUpdatesConsumer) throws TelegramApiException {
-        return registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), defaultUpdatesConsumer);
+    public BotSession registerBot(String botToken, LongPollingUpdateConsumer updatesConsumer) throws TelegramApiException {
+        return registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), updatesConsumer);
     }
 
     public BotSession registerBot(String botToken,
-                            Supplier<TelegramUrl> telegramUrlSupplier,
-                            Function<Integer, GetUpdates> getUpdatesGenerator,
-                            TelegramUpdateConsumer updatesConsumer) throws TelegramApiException {
+                                  Supplier<TelegramUrl> telegramUrlSupplier,
+                                  Function<Integer, GetUpdates> getUpdatesGenerator,
+                                  LongPollingUpdateConsumer updatesConsumer) throws TelegramApiException {
         if (botSessions.containsKey(botToken)) {
             throw new TelegramApiException("Bot is already registered");
         } else {

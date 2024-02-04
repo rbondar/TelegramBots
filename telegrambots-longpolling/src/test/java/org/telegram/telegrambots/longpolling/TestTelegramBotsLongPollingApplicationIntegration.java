@@ -16,7 +16,7 @@ import org.mockito.Spy;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
 import org.telegram.telegrambots.longpolling.util.ExponentialBackOff;
 import org.telegram.telegrambots.longpolling.util.TelegramOkHttpClientFactory;
-import org.telegram.telegrambots.longpolling.util.TelegramUpdateConsumer;
+import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.TelegramUrl;
 import org.telegram.telegrambots.meta.api.objects.ApiResponse;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -79,11 +79,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 2);
 
@@ -141,11 +137,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
             assertFalse(application.isRunning());
 
@@ -180,11 +172,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
             application.unregisterBot("TOKEN");
 
@@ -210,18 +198,14 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
+                    (LongPollingSingleThreadUpdateConsumer) update -> {
 
-                        }
                     });
 
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                        }
+                    (LongPollingSingleThreadUpdateConsumer) update -> {
                     });
 
             fail("Exception not raised when duplicating bots");
@@ -258,11 +242,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 2);
         } catch (Exception e) {
@@ -281,11 +261,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 4);
 
@@ -306,11 +282,7 @@ public class TestTelegramBotsLongPollingApplicationIntegration {
             application.registerBot("TOKEN",
                     () -> telegramUrl,
                     new DefaultGetUpdatesGenerator(),
-                    new TelegramUpdateConsumer() {
-                        public void consume(Update update) {
-                            updateReceived.add(update);
-                        }
-                    });
+                    (LongPollingSingleThreadUpdateConsumer) update -> updateReceived.add(update));
 
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> updateReceived.size() == 2);
