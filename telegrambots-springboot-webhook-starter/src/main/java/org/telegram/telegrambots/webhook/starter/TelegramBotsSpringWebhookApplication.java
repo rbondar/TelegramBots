@@ -1,10 +1,12 @@
 package org.telegram.telegrambots.webhook.starter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -57,17 +59,12 @@ public class TelegramBotsSpringWebhookApplication implements AutoCloseable {
     /**
      * Use this method to unregister a bot in the webhook server
      * @param botPath BotPath to unregister
-     *
-     * @implNote Bots can only be unregistered while server is running
-     * @implNote This will trigger a restart of the webhook server
      */
     public void unregisterBot(String botPath) throws TelegramApiException {
         if (isRunning()) {
             SpringTelegramWebhookBot removedBot = registeredBots.remove(botPath);
             if (removedBot != null) {
                 removedBot.runDeleteWebhook();
-                stop();
-                start();
             }
         } else {
             throw new TelegramApiException("Server is not running");
@@ -84,6 +81,7 @@ public class TelegramBotsSpringWebhookApplication implements AutoCloseable {
     public void registerBot(SpringTelegramWebhookBot telegramWebhookBot) throws TelegramApiException {
         if (isRunning()) {
             registeredBots.put(telegramWebhookBot.getBotPath(), telegramWebhookBot);
+            telegramWebhookBot.runSetWebhook();
         } else {
             throw new TelegramApiException("Server is not running");
         }
@@ -129,9 +127,16 @@ public class TelegramBotsSpringWebhookApplication implements AutoCloseable {
         }
     }
 
-    @RequestMapping(value = "/{botPath}", method = RequestMethod.POST,  produces = "application/json", consumes = "application/json")
+    @PostMapping(
+            value = "/{botPath}",
+            produces = "application/json",
+            consumes = "application/json"
+    )
     public BotApiMethod<?> receiveUpdate(@PathVariable("botPath") String botPath,
-                                         Update update) {
+                                         @RequestBody Update update) {
+        if (!isRunning.get()) {
+            throw new HttpServerErrorException(HttpStatus.SERVICE_UNAVAILABLE, "Service is not running");
+        }
         SpringTelegramWebhookBot responsibleBot = registeredBots.get(botPath);
         if (responsibleBot != null) {
             return responsibleBot.consumeUpdate(update);
