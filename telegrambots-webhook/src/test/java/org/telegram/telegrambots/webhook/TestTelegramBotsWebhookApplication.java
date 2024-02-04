@@ -58,7 +58,7 @@ public class TestTelegramBotsWebhookApplication {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws TelegramApiException {
         application.close();
     }
 

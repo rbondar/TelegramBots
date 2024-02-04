@@ -3,8 +3,6 @@ package org.telegram.telegrambots.webhook.starter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.webhook.TelegramBotsWebhookApplication;
-import org.telegram.telegrambots.webhook.TelegramWebhookBot;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -15,23 +13,23 @@ import java.util.stream.Stream;
 @Slf4j
 public class TelegramBotInitializer implements InitializingBean {
 
-    private final TelegramBotsWebhookApplication telegramBotsApplication;
-    private final List<TelegramWebhookBot> webhookBots;
+    private final TelegramBotsSpringWebhookApplication telegramBotsApplication;
+    private final List<SpringTelegramWebhookBot> webhookBots;
 
-    public TelegramBotInitializer(TelegramBotsWebhookApplication telegramBotsApplication,
-                                  List<TelegramWebhookBot> longPollingBots) {
+    public TelegramBotInitializer(TelegramBotsSpringWebhookApplication telegramBotsApplication,
+                                  List<SpringTelegramWebhookBot> webhookBots) {
         Objects.requireNonNull(telegramBotsApplication);
-        Objects.requireNonNull(longPollingBots);
+        Objects.requireNonNull(webhookBots);
         this.telegramBotsApplication = telegramBotsApplication;
-        this.webhookBots = longPollingBots;
+        this.webhookBots = webhookBots;
     }
 
     @Override
     public void afterPropertiesSet()  {
         try {
-            for (TelegramWebhookBot longPollingBot : webhookBots) {
-                telegramBotsApplication.registerBot(longPollingBot);
-                handleAfterRegistrationHook(longPollingBot);
+            for (SpringTelegramWebhookBot webhookBot : webhookBots) {
+                telegramBotsApplication.registerBot(webhookBot);
+                handleAfterRegistrationHook(webhookBot);
             }
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);

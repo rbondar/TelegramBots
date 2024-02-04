@@ -105,10 +105,9 @@
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-webhook</artifactId>
+            <artifactId>telegrambots-meta</artifactId>
             <version>${telegrambots.version}</version>
         </dependency>
         <dependency>
@@ -124,17 +123,21 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
 
+        <!-- Test Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-webhook</artifactId>
-            <version>7.0.0-rc0</version>
-            <scope>compile</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

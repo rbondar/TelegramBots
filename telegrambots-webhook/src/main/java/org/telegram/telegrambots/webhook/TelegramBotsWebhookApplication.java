@@ -201,7 +201,7 @@ public class TelegramBotsWebhookApplication implements AutoCloseable {
 
 
     @Override
-    public void close() {
-        app.stop();
+    public void close() throws TelegramApiException {
+        this.stop();
     }
 }

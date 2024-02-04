@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.webhook.TelegramBotsWebhookApplication;
-import org.telegram.telegrambots.webhook.TelegramWebhookBot;
 
 import java.util.function.Function;
 
@@ -21,7 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class TestTelegramBotStarterConfiguration {
-
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withAllowBeanDefinitionOverriding(true)
             .withConfiguration(AutoConfigurations.of(MockTelegramApplication.class,
@@ -30,10 +27,10 @@ class TestTelegramBotStarterConfiguration {
     @Test
     void createMockTelegramApplicationWithDefaultSettings() {
         this.contextRunner.run((context) -> {
-            assertThat(context).hasSingleBean(TelegramBotsWebhookApplication.class);
+            assertThat(context).hasSingleBean(TelegramBotsSpringWebhookApplication.class);
             assertThat(context).hasSingleBean(TelegramBotInitializer.class);
-            assertThat(context).doesNotHaveBean(TelegramWebhookBot.class);
-            verifyNoMoreInteractions(context.getBean(TelegramBotsWebhookApplication.class));
+            assertThat(context).doesNotHaveBean(SpringTelegramWebhookBot.class);
+            verifyNoMoreInteractions(context.getBean(TelegramBotsSpringWebhookApplication.class));
         });
     }
 
@@ -41,11 +38,11 @@ class TestTelegramBotStarterConfiguration {
     void createOnlyLongPollingBot() {
         this.contextRunner.withUserConfiguration(LongPollingBotConfig.class)
                 .run((context) -> {
-                    assertThat(context).hasSingleBean(TelegramWebhookBot.class);
+                    assertThat(context).hasSingleBean(SpringTelegramWebhookBot.class);
 
-                    TelegramBotsWebhookApplication telegramApplication = context.getBean(TelegramBotsWebhookApplication.class);
+                    TelegramBotsSpringWebhookApplication telegramApplication = context.getBean(TelegramBotsSpringWebhookApplication.class);
 
-                    verify(telegramApplication, times(1)).registerBot(any(TelegramWebhookBot.class));
+                    verify(telegramApplication, times(1)).registerBot(any(SpringTelegramWebhookBot.class));
                     verifyNoMoreInteractions(telegramApplication);
                 });
     }
@@ -53,16 +50,16 @@ class TestTelegramBotStarterConfiguration {
     @Configuration
     static class MockTelegramApplication {
         @Bean
-        public TelegramBotsWebhookApplication telegramBotsApplication() {
-            return mock(TelegramBotsWebhookApplication.class);
+        public TelegramBotsSpringWebhookApplication telegramBotsApplication() {
+            return mock(TelegramBotsSpringWebhookApplication.class);
         }
     }
 
     @Configuration
     static class LongPollingBotConfig {
         @Bean
-        public TelegramWebhookBot webhookBot() {
-            TelegramWebhookBot springLongPollingBotMock = mock(TelegramWebhookBot.class);
+        public SpringTelegramWebhookBot webhookBot() {
+            SpringTelegramWebhookBot springLongPollingBotMock = mock(SpringTelegramWebhookBot.class);
             doReturn("").when(springLongPollingBotMock).getBotPath();
             doReturn((Function<Update, BotApiMethod<?>>) update -> null).when(springLongPollingBotMock).getUpdateHandler();
             return springLongPollingBotMock;
