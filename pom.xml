@@ -18,11 +18,13 @@
         <module>telegrambots-springboot-webhook-starter</module>
         <module>telegrambots-extensions</module>
 
+
         <!--
+         <module>telegrambots-chat-session-bot</module> # Maybe to demise, TBC
          <module>telegrambots</module>
         <module>telegrambots-abilities</module>
         <module>telegrambots-spring-boot-starter</module> # Deprecated
-        <module>telegrambots-chat-session-bot</module>
+
         -->
     </modules>
 

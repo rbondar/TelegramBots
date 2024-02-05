@@ -19,7 +19,7 @@ import java.util.function.Supplier;
  *
  * @author Timo Schulz (Mit0x2)
  */
-public abstract class CommandTelegramBot implements CommandBot, ICommandRegistry, LongPollingSingleThreadUpdateConsumer {
+public abstract class CommandLongPollingTelegramBot implements CommandBot, ICommandRegistry, LongPollingSingleThreadUpdateConsumer {
     private final CommandRegistry commandRegistry;
 
     /**
@@ -31,7 +31,7 @@ public abstract class CommandTelegramBot implements CommandBot, ICommandRegistry
      * @param botUsernameSupplier Bot username supplier
      *
      */
-    public CommandTelegramBot(
+    public CommandLongPollingTelegramBot(
             TelegramClient telegramClient,
             boolean allowCommandsWithUsername,
             Supplier<String> botUsernameSupplier) {
